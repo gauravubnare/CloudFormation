@@ -1,0 +1,941 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Create an EC2 instance",
+    "Metadata": {
+        "TemplateInfo": {
+            "TemplateID": "SOPS_EC2_02",
+            "Description": "Please don't delete, tracking stats"
+        }
+    },
+    "Parameters": {
+        "AZ": {
+            "Default": "b",
+            "Description": "The availability zone for the EC2",
+            "AllowedValues": [
+                "a",
+                "b",
+                "c"
+            ],
+            "Type": "String"
+        },
+        "SecurityGroups": {
+            "Description": "Additional security groups to be added to the EC2 instance besides the default infrastructure",
+            "Type": "List<AWS::EC2::SecurityGroup::Id>"
+        },
+        "InstanceName": {
+            "Description": "The name of the instance that will be tagged",
+            "Type": "String"
+        },
+        "InstanceType": {
+            "Description": "The EC2 family type to use",
+            "Type": "String",
+            "Default": "t2.nano"
+        },
+        "AMI": {
+            "Description": "The AMI ID to be used with the EC2 instance",
+            "Type": "String"
+        },
+        "Keypair": {
+            "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+            "Type": "AWS::EC2::KeyPair::KeyName"
+        },
+        "Portfolio": {
+            "Description": "Three character code representing your portfolio",
+            "Type": "String"
+        },
+        "UserID": {
+            "Description": "The domain id of the resource owner",
+            "Type": "String"
+        },
+        
+        "DataClassification": {
+            "Description": "The classification of data that will be stored in the instance",
+            "Type": "String",
+            "Default": "Private",
+            "AllowedValues": [
+                "Public",
+                "Private",
+                "Confidential",
+                "HighlyConfidential",
+                "HighlyConfidentialSPI"
+            ]
+        },
+        "InstanceCount": {
+            "Description": "Number of EC2 instances (must be between 1 and 5).",
+            "Type": "Number",
+            "Default": 1
+        },
+        "RootVolumeSize": {
+            "Description": "Provide Root Volume Size.",
+            "Type": "Number"
+        },
+        "AdditionalVolumeSize": {
+            "Description": "Provide Additional Volume Size.",
+            "Type": "Number"
+        }
+    },
+    "Conditions": {
+        "Launch1": {
+            "Fn::Equals": [
+                1,
+                1
+            ]
+        },
+        "Launch2": {
+            "Fn::Not": [
+                {
+                    "Fn::Equals": [
+                        1,
+                        {
+                            "Ref": "InstanceCount"
+                        }
+                    ]
+                }
+            ]
+        },
+        "Launch3": {
+            "Fn::And": [
+                {
+                    "Fn::Not": [
+                        {
+                            "Fn::Equals": [
+                                1,
+                                {
+                                    "Ref": "InstanceCount"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "Fn::Not": [
+                        {
+                            "Fn::Equals": [
+                                2,
+                                {
+                                    "Ref": "InstanceCount"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "Launch4": {
+            "Fn::And": [
+                {
+                    "Fn::Not": [
+                        {
+                            "Fn::Equals": [
+                                1,
+                                {
+                                    "Ref": "InstanceCount"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "Fn::Not": [
+                        {
+                            "Fn::Equals": [
+                                2,
+                                {
+                                    "Ref": "InstanceCount"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "Fn::Not": [
+                        {
+                            "Fn::Equals": [
+                                3,
+                                {
+                                    "Ref": "InstanceCount"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "Launch5": {
+            "Fn::Equals": [
+                5,
+                {
+                    "Ref": "InstanceCount"
+                }
+            ]
+        }
+    },
+    "Mappings": {
+        "AZMap": {
+            "us-east-1": {
+                "a": "us-east-1a",
+                "b": "us-east-1b",
+                "c": "us-east-1c"
+            }
+        },
+        "SecGroupMap": {
+            "us-east-1": {
+                "GTS": "sg-05d72893530f1f9d6"
+            }
+        },
+        "SubnetMap": {
+            "us-east-1a": {
+                "GTS": "subnet-a9584682"
+            },
+            "us-east-1b": {
+                "GTS": "subnet-27bd7751"
+            },
+            "us-east-1c": {
+                "GTS": "subnet-3218f56a"
+            }
+        },
+        "SnapshotIDEncrMap": {
+            "us-east-1": {
+                "SnapshotIDEncr": "snap-00e50f5167ce7ddd6"
+            }
+        }
+    },
+    "Resources": {
+        "EC2Instance1": {
+            "Type": "AWS::EC2::Instance",
+            "Condition": "Launch1",
+            "Properties": {
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "ImageId": {
+                    "Ref": "AMI"
+                },
+                "KeyName": {
+                    "Ref": "Keypair"
+                },
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1",
+                        "Ebs": {
+                            "VolumeSize": {
+                                "Ref": "RootVolumeSize"
+                            }
+                        }
+                    },
+                    {
+                        "DeviceName": "xvdf",
+                        "Ebs": {
+                            "DeleteOnTermination": "True",
+                            "VolumeType": "gp2",
+                            "SnapshotId": {
+                                "Fn::FindInMap": [
+                                    "SnapshotIDEncrMap",
+                                    {
+                                        "Ref": "AWS::Region"
+                                    },
+                                    "SnapshotIDEncr"
+                                ]
+                            },
+                            "VolumeSize": {
+                                "Ref": "AdditionalVolumeSize"
+                            }
+                        }
+                    }
+                ],
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": "false",
+                        "DeleteOnTermination": "true",
+                        "DeviceIndex": "0",
+                        "SubnetId": {
+                            "Fn::FindInMap": [
+                                "SubnetMap",
+                                {
+                                    "Fn::FindInMap": [
+                                        "AZMap",
+                                        {
+                                            "Ref": "AWS::Region"
+                                        },
+                                        {
+                                            "Ref": "AZ"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Ref": "Portfolio"
+                                }
+                            ]
+                        },
+                        "GroupSet": {
+                            "Fn::Split": [
+                                ",",
+                                {
+                                    "Fn::Join": [
+                                        ",",
+                                        [
+                                            {
+                                                "Fn::Join": [
+                                                    ",",
+                                                    {
+                                                        "Ref": "SecurityGroups"
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "Fn::FindInMap": [
+                                                    "SecGroupMap",
+                                                    {
+                                                        "Ref": "AWS::Region"
+                                                    },
+                                                    {
+                                                        "Ref": "Portfolio"
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "Tags": [
+                    
+                    {
+                        "Key": "Userid",
+                        "Value": {
+                            "Ref": "UserID"
+                        }
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${AWS::StackName}"
+                        }
+                    },
+                    {
+                        "Key": "nostop",
+                        "Value": ""
+                    }
+                ]
+            }
+        },
+        "EC2Instance2": {
+            "Type": "AWS::EC2::Instance",
+            "Condition": "Launch2",
+            "Properties": {
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "ImageId": {
+                    "Ref": "AMI"
+                },
+                "KeyName": {
+                    "Ref": "Keypair"
+                },
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1",
+                        "Ebs": {
+                            "VolumeSize": {
+                                "Ref": "RootVolumeSize"
+                            }
+                        }
+                    },
+                    {
+                        "DeviceName": "xvdf",
+                        "Ebs": {
+                            "DeleteOnTermination": "True",
+                            "VolumeType": "gp2",
+                            "SnapshotId": {
+                                "Fn::FindInMap": [
+                                    "SnapshotIDEncrMap",
+                                    {
+                                        "Ref": "AWS::Region"
+                                    },
+                                    "SnapshotIDEncr"
+                                ]
+                            },
+                            "VolumeSize": {
+                                "Ref": "AdditionalVolumeSize"
+                            }
+                        }
+                    }
+                ],
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": "false",
+                        "DeleteOnTermination": "true",
+                        "DeviceIndex": "0",
+                        "SubnetId": {
+                            "Fn::FindInMap": [
+                                "SubnetMap",
+                                {
+                                    "Fn::FindInMap": [
+                                        "AZMap",
+                                        {
+                                            "Ref": "AWS::Region"
+                                        },
+                                        {
+                                            "Ref": "AZ"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Ref": "Portfolio"
+                                }
+                            ]
+                        },
+                        "GroupSet": {
+                            "Fn::Split": [
+                                ",",
+                                {
+                                    "Fn::Join": [
+                                        ",",
+                                        [
+                                            {
+                                                "Fn::Join": [
+                                                    ",",
+                                                    {
+                                                        "Ref": "SecurityGroups"
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "Fn::FindInMap": [
+                                                    "SecGroupMap",
+                                                    {
+                                                        "Ref": "AWS::Region"
+                                                    },
+                                                    {
+                                                        "Ref": "Portfolio"
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Userid",
+                        "Value": {
+                            "Ref": "UserID"
+                        }
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${AWS::StackName}"
+                        }
+                    },
+                    {
+                        "Key": "nostop",
+                        "Value": ""
+                    }
+                ]
+            }
+        },
+        "EC2Instance3": {
+            "Type": "AWS::EC2::Instance",
+            "Condition": "Launch3",
+            "Properties": {
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "ImageId": {
+                    "Ref": "AMI"
+                },
+                "KeyName": {
+                    "Ref": "Keypair"
+                },
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1",
+                        "Ebs": {
+                            "VolumeSize": {
+                                "Ref": "RootVolumeSize"
+                            }
+                        }
+                    },
+                    {
+                        "DeviceName": "xvdf",
+                        "Ebs": {
+                            "DeleteOnTermination": "True",
+                            "VolumeType": "gp2",
+                            "SnapshotId": {
+                                "Fn::FindInMap": [
+                                    "SnapshotIDEncrMap",
+                                    {
+                                        "Ref": "AWS::Region"
+                                    },
+                                    "SnapshotIDEncr"
+                                ]
+                            },
+                            "VolumeSize": {
+                                "Ref": "AdditionalVolumeSize"
+                            }
+                        }
+                    }
+                ],
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": "false",
+                        "DeleteOnTermination": "true",
+                        "DeviceIndex": "0",
+                        "SubnetId": {
+                            "Fn::FindInMap": [
+                                "SubnetMap",
+                                {
+                                    "Fn::FindInMap": [
+                                        "AZMap",
+                                        {
+                                            "Ref": "AWS::Region"
+                                        },
+                                        {
+                                            "Ref": "AZ"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Ref": "Portfolio"
+                                }
+                            ]
+                        },
+                        "GroupSet": {
+                            "Fn::Split": [
+                                ",",
+                                {
+                                    "Fn::Join": [
+                                        ",",
+                                        [
+                                            {
+                                                "Fn::Join": [
+                                                    ",",
+                                                    {
+                                                        "Ref": "SecurityGroups"
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "Fn::FindInMap": [
+                                                    "SecGroupMap",
+                                                    {
+                                                        "Ref": "AWS::Region"
+                                                    },
+                                                    {
+                                                        "Ref": "Portfolio"
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "Tags": [
+                   
+                    {
+                        "Key": "Userid",
+                        "Value": {
+                            "Ref": "UserID"
+                        }
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${AWS::StackName}"
+                        }
+                    },
+                    {
+                        "Key": "nostop",
+                        "Value": ""
+                    }
+                ]
+            }
+        },
+        "EC2Instance4": {
+            "Type": "AWS::EC2::Instance",
+            "Condition": "Launch4",
+            "Properties": {
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "ImageId": {
+                    "Ref": "AMI"
+                },
+                "KeyName": {
+                    "Ref": "Keypair"
+                },
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1",
+                        "Ebs": {
+                            "VolumeSize": {
+                                "Ref": "RootVolumeSize"
+                            }
+                        }
+                    },
+                    {
+                        "DeviceName": "xvdf",
+                        "Ebs": {
+                            "DeleteOnTermination": "True",
+                            "VolumeType": "gp2",
+                            "SnapshotId": {
+                                "Fn::FindInMap": [
+                                    "SnapshotIDEncrMap",
+                                    {
+                                        "Ref": "AWS::Region"
+                                    },
+                                    "SnapshotIDEncr"
+                                ]
+                            },
+                            "VolumeSize": {
+                                "Ref": "AdditionalVolumeSize"
+                            }
+                        }
+                    }
+                ],
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": "false",
+                        "DeleteOnTermination": "true",
+                        "DeviceIndex": "0",
+                        "SubnetId": {
+                            "Fn::FindInMap": [
+                                "SubnetMap",
+                                {
+                                    "Fn::FindInMap": [
+                                        "AZMap",
+                                        {
+                                            "Ref": "AWS::Region"
+                                        },
+                                        {
+                                            "Ref": "AZ"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Ref": "Portfolio"
+                                }
+                            ]
+                        },
+                        "GroupSet": {
+                            "Fn::Split": [
+                                ",",
+                                {
+                                    "Fn::Join": [
+                                        ",",
+                                        [
+                                            {
+                                                "Fn::Join": [
+                                                    ",",
+                                                    {
+                                                        "Ref": "SecurityGroups"
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "Fn::FindInMap": [
+                                                    "SecGroupMap",
+                                                    {
+                                                        "Ref": "AWS::Region"
+                                                    },
+                                                    {
+                                                        "Ref": "Portfolio"
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "Tags": [
+                   
+                    {
+                        "Key": "Userid",
+                        "Value": {
+                            "Ref": "UserID"
+                        }
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${AWS::StackName}"
+                        }
+                    },
+                    {
+                        "Key": "nostop",
+                        "Value": ""
+                    }
+                ]
+            }
+        },
+        "EC2Instance5": {
+            "Type": "AWS::EC2::Instance",
+            "Condition": "Launch5",
+            "Properties": {
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "ImageId": {
+                    "Ref": "AMI"
+                },
+                "KeyName": {
+                    "Ref": "Keypair"
+                },
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1",
+                        "Ebs": {
+                            "VolumeSize": {
+                                "Ref": "RootVolumeSize"
+                            }
+                        }
+                    },
+                    {
+                        "DeviceName": "xvdf",
+                        "Ebs": {
+                            "DeleteOnTermination": "True",
+                            "VolumeType": "gp2",
+                            "SnapshotId": {
+                                "Fn::FindInMap": [
+                                    "SnapshotIDEncrMap",
+                                    {
+                                        "Ref": "AWS::Region"
+                                    },
+                                    "SnapshotIDEncr"
+                                ]
+                            },
+                            "VolumeSize": {
+                                "Ref": "AdditionalVolumeSize"
+                            }
+                        }
+                    }
+                ],
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": "false",
+                        "DeleteOnTermination": "true",
+                        "DeviceIndex": "0",
+                        "SubnetId": {
+                            "Fn::FindInMap": [
+                                "SubnetMap",
+                                {
+                                    "Fn::FindInMap": [
+                                        "AZMap",
+                                        {
+                                            "Ref": "AWS::Region"
+                                        },
+                                        {
+                                            "Ref": "AZ"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "Ref": "Portfolio"
+                                }
+                            ]
+                        },
+                        "GroupSet": {
+                            "Fn::Split": [
+                                ",",
+                                {
+                                    "Fn::Join": [
+                                        ",",
+                                        [
+                                            {
+                                                "Fn::Join": [
+                                                    ",",
+                                                    {
+                                                        "Ref": "SecurityGroups"
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "Fn::FindInMap": [
+                                                    "SecGroupMap",
+                                                    {
+                                                        "Ref": "AWS::Region"
+                                                    },
+                                                    {
+                                                        "Ref": "Portfolio"
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "Tags": [
+                  
+                    {
+                        "Key": "Userid",
+                        "Value": {
+                            "Ref": "UserID"
+                        }
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Sub": "${AWS::StackName}"
+                        }
+                    },
+                    {
+                        "Key": "nostop",
+                        "Value": ""
+                    }
+                ]
+            }
+        }
+    },
+    "Outputs": {
+        "InstanceId1": {
+            "Condition": "Launch1",
+            "Description": "InstanceId of the newly created EC2 instance",
+            "Value": {
+                "Ref": "EC2Instance1"
+            }
+        },
+        "AZ1": {
+            "Condition": "Launch1",
+            "Description": "Availability Zone of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance1",
+                    "AvailabilityZone"
+                ]
+            }
+        },
+        "PrivateIP1": {
+            "Condition": "Launch1",
+            "Description": "PrivateIP of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance1",
+                    "PrivateIp"
+                ]
+            }
+        },
+        "InstanceId2": {
+            "Condition": "Launch2",
+            "Description": "InstanceId of the newly created EC2 instance",
+            "Value": {
+                "Ref": "EC2Instance2"
+            }
+        },
+        "AZ2": {
+            "Condition": "Launch2",
+            "Description": "Availability Zone of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance2",
+                    "AvailabilityZone"
+                ]
+            }
+        },
+        "PrivateIP2": {
+            "Condition": "Launch2",
+            "Description": "PrivateIP of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance2",
+                    "PrivateIp"
+                ]
+            }
+        },
+        "InstanceId3": {
+            "Condition": "Launch3",
+            "Description": "InstanceId of the newly created EC2 instance",
+            "Value": {
+                "Ref": "EC2Instance3"
+            }
+        },
+        "AZ3": {
+            "Condition": "Launch3",
+            "Description": "Availability Zone of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance3",
+                    "AvailabilityZone"
+                ]
+            }
+        },
+        "PrivateIP3": {
+            "Condition": "Launch3",
+            "Description": "PrivateIP of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance3",
+                    "PrivateIp"
+                ]
+            }
+        },
+        "InstanceId4": {
+            "Condition": "Launch4",
+            "Description": "InstanceId of the newly created EC2 instance",
+            "Value": {
+                "Ref": "EC2Instance1"
+            }
+        },
+        "AZ4": {
+            "Condition": "Launch4",
+            "Description": "Availability Zone of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance4",
+                    "AvailabilityZone"
+                ]
+            }
+        },
+        "PrivateIP4": {
+            "Condition": "Launch4",
+            "Description": "PrivateIP of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance4",
+                    "PrivateIp"
+                ]
+            }
+        },
+        "InstanceId5": {
+            "Condition": "Launch5",
+            "Description": "InstanceId of the newly created EC2 instance",
+            "Value": {
+                "Ref": "EC2Instance5"
+            }
+        },
+        "AZ5": {
+            "Condition": "Launch5",
+            "Description": "Availability Zone of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance5",
+                    "AvailabilityZone"
+                ]
+            }
+        },
+        "PrivateIP5": {
+            "Condition": "Launch5",
+            "Description": "PrivateIP of the newly created EC2 instance",
+            "Value": {
+                "Fn::GetAtt": [
+                    "EC2Instance5",
+                    "PrivateIp"
+                ]
+            }
+        }
+    }
+}
