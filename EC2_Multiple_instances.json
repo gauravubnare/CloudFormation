@@ -180,7 +180,7 @@
         },
         "SecGroupMap": {
             "us-east-1": {
-                "GTS": "sg-05d72893530f1f9d6"
+                "GTS": "sg-04da036e00e2ab2bf"
             }
         },
         "SubnetMap": {
@@ -196,7 +196,7 @@
         },
         "SnapshotIDEncrMap": {
             "us-east-1": {
-                "SnapshotIDEncr": "snap-00e50f5167ce7ddd6"
+                "SnapshotIDEncr": "snap-0c7f0e9e943028a37"
             }
         }
     },
