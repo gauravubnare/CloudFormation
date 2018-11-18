@@ -47,7 +47,11 @@
             "Description": "The domain id of the resource owner",
             "Type": "String"
         },
-        
+        "AppID": {
+            "Description": "The 4-character alpha-numeric ApplID code from VAST-APM",
+            "Type": "String",
+            "AllowedPattern": "[A-Z0-9]{4}"
+        },
         "DataClassification": {
             "Description": "The classification of data that will be stored in the instance",
             "Type": "String",
@@ -196,7 +200,7 @@
         },
         "SnapshotIDEncrMap": {
             "us-east-1": {
-                "SnapshotIDEncr": "snap-0c7f0e9e943028a37"
+                "SnapshotIDEncr": "snap-00e50f5167ce7ddd6"
             }
         }
     },
@@ -301,7 +305,12 @@
                     }
                 ],
                 "Tags": [
-                    
+                    {
+                        "Key": "Vsad",
+                        "Value": {
+                            "Ref": "AppID"
+                        }
+                    },
                     {
                         "Key": "Userid",
                         "Value": {
@@ -422,6 +431,12 @@
                 ],
                 "Tags": [
                     {
+                        "Key": "Vsad",
+                        "Value": {
+                            "Ref": "AppID"
+                        }
+                    },
+                    {
                         "Key": "Userid",
                         "Value": {
                             "Ref": "UserID"
@@ -540,7 +555,12 @@
                     }
                 ],
                 "Tags": [
-                   
+                    {
+                        "Key": "Vsad",
+                        "Value": {
+                            "Ref": "AppID"
+                        }
+                    },
                     {
                         "Key": "Userid",
                         "Value": {
@@ -660,7 +680,12 @@
                     }
                 ],
                 "Tags": [
-                   
+                    {
+                        "Key": "Vsad",
+                        "Value": {
+                            "Ref": "AppID"
+                        }
+                    },
                     {
                         "Key": "Userid",
                         "Value": {
@@ -780,7 +805,12 @@
                     }
                 ],
                 "Tags": [
-                  
+                    {
+                        "Key": "Vsad",
+                        "Value": {
+                            "Ref": "AppID"
+                        }
+                    },
                     {
                         "Key": "Userid",
                         "Value": {
